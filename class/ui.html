@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Exam Seating System</title>
+
+    <style>
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            margin: 0;
+            background: #f5f7fb;
+        }
+
+        header {
+            background: #2c3e50;
+            color: white;
+            padding: 15px;
+            text-align: center;
+            font-size: 22px;
+            font-weight: bold;
+        }
+
+        .container {
+            width: 90%;
+            margin: 20px auto;
+        }
+
+        .controls {
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .controls input {
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+        }
+
+        .controls button {
+            padding: 10px 15px;
+            border: none;
+            background: #3498db;
+            color: white;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+
+        .controls button:hover {
+            background: #2980b9;
+        }
+
+        .class-title {
+            text-align: center;
+            margin: 20px 0;
+            font-size: 20px;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .grid {
+            display: grid;
+            justify-content: center;
+            gap: 15px;
+        }
+
+        .seat {
+            background: white;
+            border-radius: 12px;
+            padding: 15px;
+            width: 120px;
+            height: 80px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
+            transition: 0.3s;
+            text-align: center;
+        }
+
+        .seat:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.15);
+        }
+
+        .seat b {
+            display: block;
+            font-size: 16px;
+            color: #2c3e50;
+        }
+
+        .seat span {
+            font-size: 13px;
+            color: #555;
+        }
+
+        .footer {
+            text-align: center;
+            margin-top: 30px;
+            color: #888;
+        }
+    </style>
+    <!-- PDF Generation Library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+</head>
+
+<body>
+
+    <header>Exam Seating System</header>
+
+    <div class="container">
+
+        <div class="controls">
+            Rows: <input type="number" id="rows" value="5">
+            Columns: <input type="number" id="cols" value="4">
+
+            <button onclick="assignSeats()">Assign Seats</button>
+            <button onclick="downloadPdf()" style="background:#27ae60;">Download PDF</button>
+            <button onclick="logout()" style="background:#e74c3c;">Logout</button>
+        </div>
+
+        <div id="gridsContainer"></div>
+
+    </div>
+
+    <div class="footer">City Engineering College - Seating System</div>
+
+    <script>
+        async function assignSeats() {
+            let rows = parseInt(document.getElementById("rows").value);
+            let cols = parseInt(document.getElementById("cols").value);
+
+            // Fetch student data securely from the external students.json
+            let allStudentsRaw = [];
+            try {
+                let response = await fetch("students.json");
+                if (!response.ok) throw new Error("File not found or network error.");
+                allStudentsRaw = await response.json();
+            } catch (error) {
+                alert("Failed to load students.json! Note: For security, browsers block fetching local files directly. Please ensure you are viewing this page through a local development server (Ex: python -m http.server) or IDE Live Server.");
+                console.error("Fetch Error: ", error);
+                return;
+            }
+
+            // Dynamically extract unique branches directly from the raw database
+            let branches = [...new Set(allStudentsRaw.map(usn => usn.substring(5, 7).toUpperCase()))];
+
+            let branchQueues = {};
+            let totalStudents = allStudentsRaw.length;
+            
+            branches.forEach(b => {
+                let list = allStudentsRaw.filter(usn => usn.includes(b));
+                list.sort(() => Math.random() - 0.5);
+                branchQueues[b] = list;
+            });
+
+            let container = document.getElementById("gridsContainer");
+            container.innerHTML = "";
+            let rowLetters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+
+            let totalCapacity = rows * cols;
+            let totalClasses = Math.ceil(totalStudents / totalCapacity);
+            
+            // Explicitly defined allowed Class Room designations
+            let validClasses = [
+                "C001", "C002", "C003", "C004", "C005",
+                "C101", "C102", "C103", "C104", "C105",
+                "C201", "C202", "C203", "C204", "C205",
+                "A101", "A102", "A103", "A104", "A105",
+                "A201", "A202", "A203", "A204", "A205"
+            ];
+            
+            let allSeatingData = {}; // Stores mapping for student.html
+
+            for (let i = 0; i < totalClasses; i++) {
+                
+                let currentClassName = validClasses[i] ? validClasses[i] : `Extra Room ${i + 1}`;
+
+                let title = document.createElement("div");
+                title.className = "class-title";
+                title.innerText = "Class: " + currentClassName;
+                if (i > 0) {
+                    title.style.marginTop = "60px";
+                    title.style.borderTop = "2px dashed #ccc";
+                    title.style.paddingTop = "30px";
+                }
+                
+                let grid = document.createElement("div");
+                grid.className = "grid";
+                grid.style.gridTemplateColumns = `repeat(${cols}, 140px)`;
+
+                let gridData = [];
+                for (let r = 0; r < rows; r++) {
+                    gridData.push(new Array(cols).fill(null));
+                }
+
+                for (let r = 0; r < rows; r++) {
+                    for (let c = 0; c < cols; c++) {
+                        // Look at left and top neighbors to avoid matching branches
+                        let leftBranch = c > 0 && gridData[r][c-1] && gridData[r][c-1] !== "Empty" ? gridData[r][c-1].substring(5, 7) : null;
+                        let topBranch = r > 0 && gridData[r-1][c] && gridData[r-1][c] !== "Empty" ? gridData[r-1][c].substring(5, 7) : null;
+                        
+                        let available = branches.filter(b => branchQueues[b].length > 0 && b !== leftBranch && b !== topBranch);
+                        
+                        // If strict adjacency rule can't be met, relax to avoid halting
+                        if (available.length === 0) {
+                            available = branches.filter(b => branchQueues[b].length > 0);
+                        }
+                        
+                        // Pick from branch with most remaining students to balance placement
+                        available.sort((a,b) => branchQueues[b].length - branchQueues[a].length);
+                        
+                        let student = "Empty";
+                        if (available.length > 0) {
+                            let chosen = available[0];
+                            student = branchQueues[chosen].pop();
+                        }
+                        
+                        gridData[r][c] = student;
+
+                        let seatName = (rowLetters[r] || r) + (c + 1);
+                        
+                        if (student !== "Empty") {
+                            allSeatingData[student.toLowerCase()] = {
+                                room: currentClassName,
+                                seat: seatName
+                            };
+                        }
+
+                        let div = document.createElement("div");
+                        div.className = "seat";
+                        div.innerHTML = `
+            <b>${seatName}</b>
+            <span>${student}</span>
+        `;
+                        grid.appendChild(div);
+                    }
+                }
+
+                container.appendChild(title);
+                container.appendChild(grid);
+            }
+            
+            // Save generated map to Web Storage so student.html can locally read it
+            localStorage.setItem('studentSeatingData', JSON.stringify(allSeatingData));
+        }
+
+        function downloadPdf() {
+            let container = document.getElementById("gridsContainer");
+            if (!container || container.innerHTML.trim() === "") {
+                alert("Please assign seats first before downloading!");
+                return;
+            }
+
+            // Secure prompt for PDF extraction
+            let pass = prompt("Enter Admin Password to Download PDF:");
+            
+            if (pass === "cec123") {
+                // Flash success temporarily without blocking
+                let btn = document.querySelector('button[onclick="downloadPdf()"]');
+                let originalText = btn.innerText;
+                btn.innerText = "Generating...";
+                
+                var opt = {
+                    margin:       0.5,
+                    filename:     'City_College_Seat_Allotment.pdf',
+                    image:        { type: 'jpeg', quality: 0.98 },
+                    html2canvas:  { scale: 2 },
+                    jsPDF:        { unit: 'in', format: 'a4', orientation: 'portrait' }
+                };
+                
+                // Render exact container elements to scalable PDF
+                html2pdf().set(opt).from(container).save().then(() => {
+                    btn.innerText = originalText;
+                });
+            } else if (pass !== null) {
+                alert("Incorrect Password! Download blocked.");
+            }
+        }
+
+        function logout() {
+            window.location.href = "home.html";
+        }
+    </script>
+</body>
+</html>

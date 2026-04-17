@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Faculty Login - City College Engineering</title>
+    <!-- Modern Typography via Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #ffffff;
+            --accent-color: #3498db;
+            --text-main: #2c3e50;
+            --text-secondary: #7f8c8d;
+            --error-color: #e74c3c;
+            --glass-bg: rgba(255, 255, 255, 0.8);
+            --glass-border: rgba(255, 255, 255, 0.5);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Outfit', sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #e0c3fc 0%, #8ec5fc 100%);
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-main);
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Ambient animated background blobs for premium feel */
+        .blob {
+            position: absolute;
+            filter: blur(80px);
+            z-index: 1;
+            opacity: 0.7;
+            animation: float 10s infinite ease-in-out alternate;
+        }
+        .blob-1 {
+            width: 400px;
+            height: 400px;
+            background: #ffffff;
+            top: -10%;
+            left: -10%;
+            animation-delay: 0s;
+        }
+        .blob-2 {
+            width: 300px;
+            height: 300px;
+            background: #ffe5ec;
+            bottom: -5%;
+            right: -5%;
+            opacity: 0.8;
+            animation-delay: -5s;
+        }
+        
+        @keyframes float {
+            0% { transform: translateY(0) scale(1); }
+            100% { transform: translateY(-30px) scale(1.1); }
+        }
+
+        .login-container {
+            z-index: 2;
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: 20px;
+            padding: 50px 40px;
+            width: 100%;
+            max-width: 420px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.08);
+            transform: translateY(20px);
+            opacity: 0;
+            animation: fadeUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+
+        @keyframes fadeUp {
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .header h1 {
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--text-main);
+            margin-bottom: 10px;
+            letter-spacing: 0.5px;
+        }
+
+        .header p {
+            font-size: 14px;
+            color: var(--text-secondary);
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .input-group {
+            margin-bottom: 25px;
+            position: relative;
+        }
+
+        .input-group label {
+            display: block;
+            font-size: 13px;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+        }
+
+        .input-group input {
+            width: 100%;
+            padding: 14px 16px;
+            background: rgba(255, 255, 255, 0.6);
+            border: 1px solid rgba(0, 0, 0, 0.1);
+            border-radius: 10px;
+            color: var(--text-main);
+            font-size: 16px;
+            outline: none;
+            transition: all 0.3s ease;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.02);
+        }
+
+        .input-group input:focus {
+            border-color: var(--accent-color);
+            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.15), inset 0 2px 4px rgba(0,0,0,0.02);
+            background: rgba(255, 255, 255, 0.9);
+        }
+        
+        .input-group input::placeholder {
+            color: rgba(44, 62, 80, 0.4);
+        }
+
+        .login-btn {
+            width: 100%;
+            padding: 15px;
+            background-color: var(--accent-color);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 10px;
+            box-shadow: 0 4px 15px rgba(52, 152, 219, 0.3);
+        }
+
+        .login-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(52, 152, 219, 0.4);
+            background-color: #2980b9;
+        }
+
+        .login-btn:active {
+            transform: translateY(0);
+        }
+
+        .message {
+            margin-top: 20px;
+            text-align: center;
+            font-size: 14px;
+            min-height: 20px;
+            font-weight: 600;
+        }
+
+        .message.error {
+            color: var(--error-color);
+        }
+
+        .message.success {
+            color: #27ae60;
+        }
+
+        .tabs {
+            display: flex;
+            background: rgba(0, 0, 0, 0.05);
+            border-radius: 12px;
+            margin-bottom: 25px;
+            padding: 5px;
+        }
+
+        .tab {
+            flex: 1;
+            text-align: center;
+            padding: 10px 0;
+            font-size: 14px;
+            font-weight: 700;
+            color: var(--text-secondary);
+            cursor: pointer;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .tab.active {
+            background: white;
+            color: var(--accent-color);
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Ambient background decorations -->
+    <div class="blob blob-1"></div>
+    <div class="blob blob-2"></div>
+
+    <div class="login-container">
+        <div class="tabs">
+            <div class="tab active" data-type="faculty">Faculty</div>
+            <div class="tab" data-type="student">Student</div>
+        </div>
+
+        <div class="header">
+            <h1 id="portalTitle">Faculty Portal</h1>
+            <p>City College Engineering</p>
+        </div>
+
+        <form id="loginForm">
+            <div class="input-group">
+                <label for="username">Username</label>
+                <input type="text" id="username" placeholder="city engineering college" autocomplete="off" required>
+            </div>
+            
+            <div class="input-group">
+                <label for="password">Password</label>
+                <input type="password" id="password" placeholder="••••••" required>
+            </div>
+
+            <button type="submit" class="login-btn">Secure Login</button>
+            <div id="statusMessage" class="message"></div>
+        </form>
+    </div>
+
+    <script>
+        let currentType = 'faculty';
+        const tabs = document.querySelectorAll('.tab');
+        const titleEl = document.getElementById('portalTitle');
+        const userEl = document.getElementById('username');
+        const msg = document.getElementById('statusMessage');
+
+        tabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                tabs.forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+                currentType = tab.dataset.type;
+
+                // Reset forms visually when switching
+                msg.className = 'message';
+                msg.textContent = '';
+                userEl.value = '';
+                document.getElementById('password').value = '';
+
+                if(currentType === 'faculty') {
+                    titleEl.textContent = 'Faculty Portal';
+                    userEl.placeholder = 'city engineering college';
+                } else {
+                    titleEl.textContent = 'Student Portal';
+                    userEl.placeholder = '1ce23cs093';
+                }
+            });
+        });
+
+        document.getElementById('loginForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const btn = document.querySelector('.login-btn');
+            const user = userEl.value.trim().toLowerCase();
+            const pass = document.getElementById('password').value;
+
+            btn.textContent = 'Authenticating...';
+            btn.style.opacity = '0.8';
+            msg.textContent = '';
+            msg.className = 'message';
+
+            setTimeout(() => {
+                let success = false;
+
+                if (currentType === 'faculty') {
+                    if (user === 'city engineering college' && pass === 'cec123') {
+                        success = true;
+                    }
+                } else if (currentType === 'student') {
+                    if (user === '1ce23cs093' && pass === '17052005') {
+                        success = true;
+                    }
+                }
+
+                if (success) {
+                    msg.textContent = 'Authentication successful! Redirecting...';
+                    msg.className = 'message success';
+                    
+                    // Route to respective specific dashboard
+                    setTimeout(() => {
+                        if (currentType === 'faculty') {
+                            window.location.href = 'ui.html';
+                        } else {
+                            window.location.href = 'student.html';
+                        }
+                    }, 600);
+
+                } else {
+                    msg.textContent = 'Access Denied: Invalid credentials.';
+                    msg.className = 'message error';
+                }
+                
+                btn.textContent = 'Secure Login';
+                btn.style.opacity = '1';
+            }, 800);
+        });
+    </script>
+</body>
+</html>

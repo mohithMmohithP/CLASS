@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Seat Finder</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #ffffff;
+            --accent-color: #3498db;
+            --text-main: #2c3e50;
+            --text-secondary: #7f8c8d;
+            --error-color: #e74c3c;
+            --glass-bg: rgba(255, 255, 255, 0.85);
+            --glass-border: rgba(255, 255, 255, 0.5);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Outfit', sans-serif; }
+        body { background: linear-gradient(135deg, #e0c3fc 0%, #8ec5fc 100%); height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; overflow: hidden; }
+        .blob { position: absolute; filter: blur(80px); z-index: 1; opacity: 0.7; animation: float 10s infinite ease-in-out alternate; }
+        .blob-1 { width: 400px; height: 400px; background: #ffffff; top: -10%; left: -10%; }
+        .blob-2 { width: 300px; height: 300px; background: #ffe5ec; bottom: -5%; right: -5%; animation-delay: -5s; }
+        @keyframes float { 0% { transform: translateY(0) scale(1); } 100% { transform: translateY(-30px) scale(1.1); } }
+        
+        .card { z-index: 2; background: var(--glass-bg); backdrop-filter: blur(20px); border: 1px solid var(--glass-border); border-radius: 20px; padding: 40px; width: 90%; max-width: 450px; box-shadow: 0 20px 40px rgba(0, 0, 0, 0.08); text-align: center; }
+        .card h1 { font-size: 26px; color: var(--text-main); margin-bottom: 20px; }
+        
+        .input-group { position: relative; margin-bottom: 20px; }
+        .input-group input { width: 100%; padding: 15px; background: rgba(255, 255, 255, 0.6); border: 1px solid rgba(0,0,0,0.1); border-radius: 10px; font-size: 16px; outline: none; transition: 0.3s; text-transform: uppercase; }
+        .input-group input:focus { border-color: var(--accent-color); background: #fff; box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.15); }
+        
+        button { width: 100%; padding: 15px; background: var(--accent-color); color: white; border: none; border-radius: 10px; font-size: 16px; font-weight: bold; cursor: pointer; transition: 0.3s; box-shadow: 0 4px 15px rgba(52, 152, 219, 0.3); }
+        button:hover { background: #2980b9; transform: translateY(-2px); }
+        
+        .result-box { margin-top: 25px; padding: 20px; background: white; border-radius: 15px; display: none; border: 1px solid rgba(0,0,0,0.05); }
+        .result-box.visible { display: block; animation: fadeUp 0.5s ease forwards; }
+        .stat { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #eee; }
+        .stat:last-child { border-bottom: none; }
+        .stat-label { color: var(--text-secondary); font-size: 14px; font-weight: 600; text-transform: uppercase; }
+        .stat-value { color: var(--accent-color); font-size: 18px; font-weight: 700; }
+        .error-msg { color: var(--error-color); margin-top: 15px; font-weight: 600; display: none; }
+        
+        @keyframes fadeUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
+</head>
+<body>
+    <div class="blob blob-1"></div><div class="blob blob-2"></div>
+    
+    <div class="card">
+        <h1>Find My Seat</h1>
+        <div class="input-group">
+            <input type="text" id="usnInput" placeholder="Enter USN (e.g. 1CE23CS093)" autocomplete="off">
+        </div>
+        <button onclick="searchSeat()">Search Room</button>
+        <button onclick="window.location.href='home.html'" style="background:#e74c3c; margin-top: 10px;">Logout</button>
+        <div class="error-msg" id="errorMsg">USN not found. Check if seats are allotted.</div>
+        
+        <div class="result-box" id="resultBox">
+            <div class="stat">
+                <span class="stat-label">Student USN</span>
+                <span class="stat-value" id="displayUsn">-</span>
+            </div>
+            <div class="stat">
+                <span class="stat-label">Classroom</span>
+                <span class="stat-value" id="displayRoom">-</span>
+            </div>
+            <div class="stat">
+                <span class="stat-label">Seat Code</span>
+                <span class="stat-value" id="displaySeat">-</span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function searchSeat() {
+            const rawInput = document.getElementById('usnInput').value.trim();
+            const usn = rawInput.toLowerCase();
+            const resultBox = document.getElementById('resultBox');
+            const errorMsg = document.getElementById('errorMsg');
+            
+            resultBox.classList.remove('visible');
+            errorMsg.style.display = 'none';
+            
+            if(!usn) return;
+            
+            // Retrieve allotment generated secretly by ui.html
+            const dataStr = localStorage.getItem('studentSeatingData');
+            if(!dataStr) {
+                errorMsg.textContent = "Seat allotment hasn't been generated by Faculty yet.";
+                errorMsg.style.display = 'block';
+                return;
+            }
+            
+            const seatingData = JSON.parse(dataStr);
+            const studentInfo = seatingData[usn];
+            
+            if(studentInfo) {
+                document.getElementById('displayUsn').textContent = rawInput.toUpperCase();
+                document.getElementById('displayRoom').textContent = studentInfo.room;
+                document.getElementById('displaySeat').textContent = studentInfo.seat;
+                resultBox.classList.add('visible');
+            } else {
+                errorMsg.textContent = "USN not found in current seating allotment list.";
+                errorMsg.style.display = 'block';
+            }
+        }
+
+        // Trigger search on "Enter" keystroke
+        document.getElementById('usnInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                searchSeat();
+            }
+        });
+    </script>
+</body>
+</html>
